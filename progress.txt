@@ -1,0 +1,39 @@
+
+
+Done::::::::::::::::::::::::::::::::::::
+
+- bi-objective correcting
+- bi objective setting
+- real data downloaded with elevation and road features
+- data translated to nx multigraph
+- adjust graph in two ways to deal with node data
+- Heuristic Multi-Label Selection Algorithm
+
+
+In progress::::::::::::::::::::::::::::::::::::
+
+- NGAMOBRP
+    - need rewrite parts without pymoo to fix NSGAII restrictions on dynamic population size
+    - cost functions need tweaking for accuracy
+    - cost functions need tweaking for more criteria costs
+    - adjust astar heuristics based on cost functions
+
+TODO:::::::::::::::::::::::::::::::::::
+
+- write testing framework/cases
+- write visualizations
+    - show paths on graph
+    - graphs comparing results
+
+- near shortest path alg
+- Linear Scalarized Single Criteria A*
+- Multi-Label Correcting Algorithm
+- more cost functions
+    - hrncir cost functions
+
+- djikstras
+- rewrite a* for better results
+
+maybe:
+- exact constrained with contraction hierarchy
+- test out some different genetic algs

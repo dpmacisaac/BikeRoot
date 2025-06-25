@@ -1,0 +1,20 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        //  python3 -m bikeroot.algorithms.heuristic_enabled_mc_label_setting run this
+        {
+            "name": "Python: Bikeroot Heuristic Enabled MC Label Setting",
+            "type": "python",
+            "request": "launch",
+            "module": "bikeroot.algorithms.heuristic_enabled_mc_label_setting",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--input", "${workspaceFolder}/tests/data/graph_1.json"
+            ]
+        }
+    ]
+}
