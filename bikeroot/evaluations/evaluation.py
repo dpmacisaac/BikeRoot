@@ -30,36 +30,8 @@ def _handler(signum, frame): raise Timeout()
 
 class Evaluation:
     # Algorithm configurations
-    configs = {
-        'hmls_125_16_005': {
-            'func': hmls_solve,
-            'params': {
-                'heuristic_skip': {'type': 'ellipse', 'ab': 1.25},
-                'heuristic_prune': {'type': 'ratio', 'criteria': 'travel distance', 'alpha': 1.6},
-                'heuristic_checkdom': {'type': 'epsilon', 'epsilon': 0.005}
-            }
-        },
-        'ngamobrp_10_50_01': {
-            'func': ngamobrp_solve,
-            'params': {
-                'debug': False,
-                'n_gen': 10,
-                'population_size': 50,
-                'mut_prob': 0.01
-            }
-        },
-        # 'ngamobrp_2': {
-        #     'func': ngamobrp_solve,
-        #     'params': {
-        #         'debug': False,
-        #         'n_gen': 60,
-        #         'alg': 'base',
-        #         'surv': 'base'
-        #     }
-        # }
-    }
 
-    def __init__(self, graph_name, location, src, dst, criteria,lent,dist_group, G=None):
+    def __init__(self, graph_name, location, src, dst, criteria,lent,dist_group, configs, G=None):
         self.graph_name = graph_name
         self.location = location
         self.loc_name = location.split(",")[0].lower().replace(" ", "_")
@@ -68,6 +40,7 @@ class Evaluation:
         self.criteria = criteria
         self.lent = lent
         self.dist_group = dist_group
+        self.configs = configs
 
         if G:
             self.graph = G
@@ -87,6 +60,7 @@ class Evaluation:
 
         if 'finished' not in self.__dict__:
             self.finished = [alg_name for alg_name in self.results.keys()]
+        
     def _set_hypervolume_ref_point(self):
         nga = NGAMOBRPProblem(self.graph, self.src, self.dst, criteria=self.criteria)
         ref_costs = []
@@ -97,9 +71,11 @@ class Evaluation:
         max_vals = np.max(np.array(ref_costs), axis=0)
         return max_vals.astype(float)
 
-    def evaluate(self, redo=False):
+    def evaluate(self, configs= None, redo=False):
         failed_algos = {}
-        for algo_name, config in self.configs.items():
+        if configs is None:
+            configs = self.configs
+        for algo_name, config in configs.items():
             fail = False
             logging.info(f"Evaluating: {algo_name}")
             prev_handler = signal.getsignal(signal.SIGALRM)

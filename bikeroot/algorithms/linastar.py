@@ -13,21 +13,44 @@ def solve(G: nx.MultiDiGraph,
           **kwargs) -> list[tuple[list[int], list[float]]]:
     log = kwargs.get('log_level', 'critical')
     if log == 'info':
-        logging.getLogger().setLevel(logging.INFO)
+        print("Logging level set to INFO.")
+        logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
     elif log == 'critical':
         logging.getLogger().setLevel(logging.CRITICAL)
     crit_count = len(criteria)
     sol_count = kwargs.get('sol_count', crit_count*4)
+    find_all_sols = kwargs.get('find_all_sols', False)
     
     # print(simplex_lattice(sol_count, crit_count))
-    prefs = preference_weights(sol_count, crit_count)
+
+    if find_all_sols:
+        prefs = preference_weights(sol_count*4, crit_count)
+    else:
+        prefs = preference_weights(sol_count, crit_count)
+    logging.info(f"Generated {len(prefs)} preference vectors for {crit_count} criteria.")
     pref = {k:-1 for k in criteria}
     paths = []
-    for idx in range(sol_count):
-        pref = {k: float(prefs[idx][i]) for i, k, in enumerate(criteria)}
-        path = alg_utils.a_star(G, src, dst, scalarized_heuristic(pref,G), scalarized_cost(pref))
-        if path not in paths:
-            paths.append(path)
+    if find_all_sols:
+        print(f"Finding {sol_count} solutions with {len(prefs)} preferences.")
+        idx = 0
+        while len(paths) < sol_count and idx < len(prefs):
+            pref = {k: float(prefs[idx][i]) for i, k in enumerate(criteria)}
+            path = alg_utils.a_star(G, src, dst, scalarized_heuristic(pref,G), scalarized_cost(pref))
+            if path not in paths:
+                logging.info(f"Preference {idx}: {pref}, Path: {path}, Count: {len(paths)}")
+                paths.append(path)
+            else:
+                logging.warning(f"Duplicate path found for preference {idx}: {path}")
+            idx += 1
+    else:
+        for idx in range(sol_count):
+            pref = {k: float(prefs[idx][i]) for i, k, in enumerate(criteria)}
+            path = alg_utils.a_star(G, src, dst, scalarized_heuristic(pref,G), scalarized_cost(pref))
+            if path not in paths:
+                logging.info(f"Preference {idx}: {pref}, Path: {path}")
+                paths.append(path)
+            else:
+                logging.warning(f"Duplicate path found for preference {idx}: {path}")
     paths_costs = []
     for path in paths:
         cost = alg_utils.total_path_cost(G, path, criteria)

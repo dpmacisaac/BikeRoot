@@ -36,8 +36,6 @@ def solve(G: nx.MultiDiGraph,
     problem = NGAMOBRPProblem(G,src, dst ,seed=seed, criteria=criteria)
     population_size = kwargs.get('population_size', 100)
     mutation_prob = kwargs.get('mut_prob', 0.05)
-    if survival == 'ngamobrp':
-        options['survival'] = NGAMOBRPSurvival(population_size)
     if alg == 'dynamic':
         algorithm = DynamicNSGA2(
             pop_size   = population_size,
@@ -46,6 +44,7 @@ def solve(G: nx.MultiDiGraph,
             mutation   = NGAMOBRPMutation(prob=mutation_prob),
             selection  = NGAMOBRPSelection(),
             eliminate_duplicates = RouteDuplicateElim(problem),
+            survival   = NGAMOBRPSurvival(population_size),
             **options
         )
     else:
@@ -54,8 +53,6 @@ def solve(G: nx.MultiDiGraph,
             sampling   = NGAMOBRPSampling(population_size),
             crossover  = NGAMOBRPCrossover(),
             mutation   = NGAMOBRPMutation(),
-            selection  = NGAMOBRPSelection(),
-            eliminate_duplicates = RouteDuplicateElim(problem),
             **options
         )
 
