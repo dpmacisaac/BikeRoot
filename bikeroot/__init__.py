@@ -17,7 +17,7 @@ __all__ = [
     "alg_utils",
     "biobjective_label_setting_solve",
     "biobjective_label_correcting_solve",
-    "heuristic_enabled_mc_label_setting_solve",
+    "hmls_solve",
     "eval_utils",
     "Result",
     "HeuristicSkip",
@@ -26,6 +26,8 @@ __all__ = [
     "ngamobrp_solve",
     "nga3mobrp_solve",
     "moedbrp_solve",
+    'Evaluation',
+    "linastar_solve"
 ]
 
 from .graphs.bikenetwork import BikeNetwork
@@ -40,10 +42,11 @@ from .algorithms.moedbrp import solve as moedbrp_solve
 
 from .algorithms.biobjective_label_setting import solve as biobjective_label_setting_solve
 from .algorithms.biobjective_label_correcting import solve as biobjective_label_correcting_solve
-from .algorithms.heuristic_enabled_mc_label_setting import solve as heuristic_enabled_mc_label_setting_solve
-from .algorithms.heuristic_enabled_mc_label_setting import Skip as HeuristicSkip
-from .algorithms.heuristic_enabled_mc_label_setting import Pruning as HeuristicPruning
-from .algorithms.heuristic_enabled_mc_label_setting import CheckDominance as HeuristicCheckDom
+from .algorithms.hmls import solve as hmls_solve
+from .algorithms.hmls import Skip as HeuristicSkip
+from .algorithms.hmls import Pruning as HeuristicPruning
+from .algorithms.hmls import CheckDominance as HeuristicCheckDom
 
 from .evaluations import utils as eval_utils
-from .evaluations.evaluation import Result
+from .evaluations.evaluation import Result, Evaluation
+from .algorithms.linastar import solve as linastar_solve

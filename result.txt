@@ -1,0 +1,148 @@
+    100
+    [INFO] Evaluating: ngamobrp
+    Loaded graph for Spokane, WA with 104451 nodes and 288279 edges.
+    Evaluating from 12145206682 to 12145206629 for Spokane, WA with 495.9196253304533...
+    [INFO] Hypervolume: 49055141.923
+    [INFO] Saved results for ngamobrp (13 solutions, 7.75s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 12145206682 to 12145206629. Current index: 1
+    Evaluating from 51032709 to 8141408064 for Spokane, WA with 1408.3211673993424...
+    [INFO] Hypervolume: 2295376231.997
+    [INFO] Saved results for ngamobrp (16 solutions, 12.59s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 51032709 to 8141408064. Current index: 2
+    Evaluating from 50943276 to 8570469055 for Spokane, WA with 1932.4082894577816...
+    [INFO] Hypervolume: 9239404608.004
+    [INFO] Saved results for ngamobrp (67 solutions, 10.55s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 50943276 to 8570469055. Current index: 3
+    Evaluating from 10992789030 to 10582521342 for Spokane, WA with 2582.8839597218357...
+    [INFO] Hypervolume: 247079469471.598
+    [INFO] Saved results for ngamobrp (76 solutions, 12.16s)
+    Finished evaluation for 10992789030 to 10582521342. Current index: 4
+    Evaluating from 8082412515 to 12105439302 for Spokane, WA with 3607.0385299291574...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 149921819235.152
+    [INFO] Saved results for ngamobrp (61 solutions, 15.38s)
+    Finished evaluation for 8082412515 to 12105439302. Current index: 5
+    Evaluating from 50968200 to 11021061859 for Spokane, WA with 3664.3719941409076...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 1168011203487.268
+    [INFO] Saved results for ngamobrp (105 solutions, 11.63s)
+    Finished evaluation for 50968200 to 11021061859. Current index: 6
+    Evaluating from 11053828893 to 10757561389 for Spokane, WA with 3684.326095345707...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 442825544545.494
+    [INFO] Saved results for ngamobrp (133 solutions, 11.83s)
+    Finished evaluation for 11053828893 to 10757561389. Current index: 7
+    Evaluating from 11265629024 to 8109099434 for Spokane, WA with 4050.644435959347...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 150011423869.610
+    [INFO] Saved results for ngamobrp (176 solutions, 15.63s)
+    Finished evaluation for 11265629024 to 8109099434. Current index: 8
+    Evaluating from 9575281758 to 10157431933 for Spokane, WA with 4078.582397925385...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 824252951852.633
+    [INFO] Saved results for ngamobrp (93 solutions, 13.85s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 9575281758 to 10157431933. Current index: 9
+    Evaluating from 6928027683 to 9771126816 for Spokane, WA with 5081.723511479114...
+    [INFO] Hypervolume: 51673391134.656
+    [INFO] Saved results for ngamobrp (91 solutions, 13.96s)
+    Finished evaluation for 6928027683 to 9771126816. Current index: 10
+    Evaluating from 50939898 to 12522426163 for Spokane, WA with 5119.457588794363...
+    [INFO] Evaluating: ngamobrp
+
+- 10, 50, 0.1
+    100
+    [INFO] Evaluating: ngamobrp
+    Loaded graph for Spokane, WA with 104451 nodes and 288279 edges.
+    Evaluating from 12145206682 to 12145206629 for Spokane, WA with 495.9196253304533...
+    [INFO] Hypervolume: 49164724.185
+    [INFO] Saved results for ngamobrp (15 solutions, 8.61s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 12145206682 to 12145206629. Current index: 1
+    Evaluating from 51032709 to 8141408064 for Spokane, WA with 1408.3211673993424...
+    [INFO] Hypervolume: 2295376231.997
+    [INFO] Saved results for ngamobrp (16 solutions, 16.66s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 51032709 to 8141408064. Current index: 2
+    Evaluating from 50943276 to 8570469055 for Spokane, WA with 1932.4082894577816...
+    [INFO] Hypervolume: 9338502177.844
+    [INFO] Saved results for ngamobrp (93 solutions, 12.52s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 50943276 to 8570469055. Current index: 3
+    Evaluating from 10992789030 to 10582521342 for Spokane, WA with 2582.8839597218357...
+    [INFO] Hypervolume: 246475844943.268
+    [INFO] Saved results for ngamobrp (70 solutions, 24.69s)
+    Finished evaluation for 10992789030 to 10582521342. Current index: 4
+    Evaluating from 8082412515 to 12105439302 for Spokane, WA with 3607.0385299291574...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 150369291241.444
+    [INFO] Saved results for ngamobrp (73 solutions, 36.81s)
+    Finished evaluation for 8082412515 to 12105439302. Current index: 5
+    Evaluating from 50968200 to 11021061859 for Spokane, WA with 3664.3719941409076...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 957886093205.932
+    [INFO] Saved results for ngamobrp (110 solutions, 21.27s)
+    Finished evaluation for 50968200 to 11021061859. Current index: 6
+    Evaluating from 11053828893 to 10757561389 for Spokane, WA with 3684.326095345707...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 424193715205.122
+    [INFO] Saved results for ngamobrp (151 solutions, 16.54s)
+    Finished evaluation for 11053828893 to 10757561389. Current index: 7
+    Evaluating from 11265629024 to 8109099434 for Spokane, WA with 4050.644435959347...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 151429399705.461
+    [INFO] Saved results for ngamobrp (150 solutions, 24.09s)
+    Finished evaluation for 11265629024 to 8109099434. Current index: 8
+    Evaluating from 9575281758 to 10157431933 for Spokane, WA with 4078.582397925385...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 846004326517.365
+    [INFO] Saved results for ngamobrp (112 solutions, 20.88s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 9575281758 to 10157431933. Current index: 9
+    Evaluating from 6928027683 to 9771126816 for Spokane, WA with 5081.723511479114...
+    [INFO] Hypervolume: 54470317530.124
+    [INFO] Saved results for ngamobrp (80 solutions, 22.56s)
+    Finished evaluation for 6928027683 to 9771126816. Current index: 10
+    Evaluating from 50939898 to 12522426163 for Spokane, WA with 5119.457588794363...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 1708562458337.779
+    [INFO] Saved results for ngamobrp (163 solutions, 13.81s)
+    Finished evaluation for 50939898 to 12522426163. Current index: 11
+    Evaluating from 50991532 to 4499303036 for Spokane, WA with 5650.0443563616...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 825808649461.991
+    [INFO] Saved results for ngamobrp (104 solutions, 22.15s)
+    Finished evaluation for 50991532 to 4499303036. Current index: 12
+    Evaluating from 10074481881 to 8577836735 for Spokane, WA with 6194.7975326973...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 1365967431.057
+    [INFO] Saved results for ngamobrp (89 solutions, 47.31s)
+    [INFO] Evaluating: ngamobrp
+    Finished evaluation for 10074481881 to 8577836735. Current index: 13
+    Evaluating from 8190183452 to 10222952894 for Spokane, WA with 6637.422984962179...
+    [INFO] Hypervolume: 6375130865.588
+    [INFO] Saved results for ngamobrp (98 solutions, 21.99s)
+    Finished evaluation for 8190183452 to 10222952894. Current index: 14
+    Evaluating from 12478081522 to 12146623642 for Spokane, WA with 6687.941687063529...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 693593425939.441
+    [INFO] Saved results for ngamobrp (78 solutions, 46.28s)
+    Finished evaluation for 12478081522 to 12146623642. Current index: 15
+    Evaluating from 9344700325 to 50958871 for Spokane, WA with 6785.110623647216...
+    [INFO] Evaluating: ngamobrp
+    [INFO] Hypervolume: 1363745571971.962
+    [INFO] Saved results for ngamobrp (190 solutions, 23.92s)
+    Finished evaluation for 9344700325 to 50958871. Current index: 16
+    Evaluating from 8253664326 to 9431252317 for Spokane, WA with 6957.88101872786...
+    [INFO] Evaluating: ngamobrp
+    Exception ignored in: <bound method IPythonKernel._clean_thread_parent_frames of <ipykernel.ipkernel.IPythonKernel object at 0x7d8b7222a8e0>>
+    Traceback (most recent call last):
+    File "/home/dom/anaconda3/envs/ox/lib/python3.9/site-packages/ipykernel/ipkernel.py", line 775, in _clean_thread_parent_frames
+        def _clean_thread_parent_frames(
+    KeyboardInterrupt: 
+
+
+- 10, 50, 0.01

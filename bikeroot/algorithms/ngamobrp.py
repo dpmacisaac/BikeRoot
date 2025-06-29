@@ -28,19 +28,40 @@ def solve(G: nx.MultiDiGraph,
           criteria: list[str],debug=False,
           **kwargs) -> list[tuple[list[int], list[float]]]:
     seed = kwargs.get('seed', 0)
+
+    alg = kwargs.get('alg','dynamic')
+    survival = kwargs.get('surv', 'ngamobrp')
+    options = {}
+
     problem = NGAMOBRPProblem(G,src, dst ,seed=seed, criteria=criteria)
     population_size = kwargs.get('population_size', 100)
-    algorithm = NSGA2(
-        pop_size   = population_size,
-        sampling   = NGAMOBRPSampling(population_size),
-        crossover  = NGAMOBRPCrossover(),
-        mutation   = NGAMOBRPMutation(),
-        selection  = NGAMOBRPSelection(),
-        eliminate_duplicates = RouteDuplicateElim(problem)
-    )
+    mutation_prob = kwargs.get('mut_prob', 0.05)
+    if survival == 'ngamobrp':
+        options['survival'] = NGAMOBRPSurvival(population_size)
+    if alg == 'dynamic':
+        algorithm = DynamicNSGA2(
+            pop_size   = population_size,
+            sampling   = NGAMOBRPSampling(population_size),
+            crossover  = NGAMOBRPCrossover(),
+            mutation   = NGAMOBRPMutation(prob=mutation_prob),
+            selection  = NGAMOBRPSelection(),
+            eliminate_duplicates = RouteDuplicateElim(problem),
+            **options
+        )
+    else:
+        algorithm = NSGA2(
+            pop_size   = population_size,
+            sampling   = NGAMOBRPSampling(population_size),
+            crossover  = NGAMOBRPCrossover(),
+            mutation   = NGAMOBRPMutation(),
+            selection  = NGAMOBRPSelection(),
+            eliminate_duplicates = RouteDuplicateElim(problem),
+            **options
+        )
 
     n_gen = kwargs.get('n_gen', 200)
     termination = get_termination("n_gen", n_gen)
+    params = {}
     if debug:
         class DebugCB(Callback):
             def __init__(self):
@@ -48,22 +69,18 @@ def solve(G: nx.MultiDiGraph,
             def notify(self, algorithm):
                 gen = algorithm.n_gen
                 print(f"Gen {gen:02d} | pop.F[0] = {algorithm.pop.get('F')[0]}")
-        res= minimize(
-            problem,                  # your NGAMOBRPProblem
-            algorithm,
-            termination,
-            callback = DebugCB(),     # drop if you don’t want console spam
-            seed     = seed,
-            verbose  = True           # prints generational stats
-        )
-    else:
-        res= minimize(
-            problem,                  # your NGAMOBRPProblem
-            algorithm,
-            termination,    # drop if you don’t want console spam
-            seed     = seed,
-            verbose  = False           # prints generational stats
-        )
+        
+        params['callback'] = DebugCB()  # drop if you don’t want console spam
+
+    res= minimize(
+        problem,                  # your NGAMOBRPProblem
+        algorithm,
+        termination,    # drop if you don’t want console spam
+        seed     = seed,
+        verbose  = False,           # prints generational stats
+        **params
+    )
+
     routes = []
     for idx in  range(len(res.pop.get("X"))):
         route = problem.get_route(res.pop.get("X")[idx][0])
@@ -73,6 +90,20 @@ def solve(G: nx.MultiDiGraph,
         routes.append((route, cost))
 
     return routes
+
+class DynamicNSGA2(NSGA2):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _next(self):
+        super()._next()               # NSGA-II as usual
+
+        # keep the whole survivor set as the new fixed size
+        new_size = len(self.pop)      # can grow or shrink
+        if new_size != self.pop_size:
+            self.pop_size           = new_size
+            self.n_offsprings       = new_size
+            self.survival.n_survive = new_size   # for the *next* gen
 
 class NGAMOBRPProblem(Problem):
     def __init__(self, graph, src, dst, seed=0, criteria=None):
@@ -88,16 +119,21 @@ class NGAMOBRPProblem(Problem):
         self.graph = graph
         self.route_storage = {}
         self.fitness_storage = {}
+        self.route_hash = {}
         self.rand = random.Random(seed)
         self.src = src
         self.dst = dst
         self.obj_names = criteria if criteria is not None else ['travel distance', 'travel time', 'safety', 'comfort']
 
     def store_route(self, route):
-        """Save route, return its index so operators can build chromosomes."""
-        idx = len(self.route_storage)
+        key = tuple(route)            # lists aren’t hashable
+        if key in self.route_hash:    # seen before → re-use index
+            return self.route_hash[key]
+
+        idx = len(self.route_storage) # brand-new route
         self.route_storage[idx] = route
         self.fitness_storage[idx] = None
+        self.route_hash[key] = idx
         return idx
     
     def get_route(self, idx):
@@ -157,12 +193,12 @@ class NGAMOBRPProblem(Problem):
         if n < 2:
             return route
         node_i = self.rand.randint(1, n-2)
-        objective = self.random_objective()
-        #print(str(version) + "  " +str(node_i) + "  " + str(self.obj_names[objective]))
+        obj_idx = self.random_objective()
+        perturbed = route
         if version == 1:
-            return route[:node_i] + self.a_star(route[node_i], self.dst, objective)
+            perturbed = route[:node_i] + self.a_star(route[node_i], self.dst, obj_idx)
         elif version == 2:
-            return self.a_star(self.src, route[node_i], objective) + route[node_i+1:]
+            perturbed = self.a_star(self.src, route[node_i], obj_idx) + route[node_i+1:]
         elif version == 3:
             node_i2 = self.rand.randint(1, n-2)
             while node_i2 == node_i:
@@ -170,35 +206,22 @@ class NGAMOBRPProblem(Problem):
             if node_i2 < node_i:
                 node_i, node_i2 = node_i2, node_i
             # print(node_i, node_i2)
-            new =  route[:node_i] + self.a_star(route[node_i],route[node_i2], objective) + route[node_i2+1:]
-            # print(new)
-            return new
-        return route
+            perturbed =  route[:node_i] + self.a_star(route[node_i],route[node_i2], obj_idx) + route[node_i2+1:]
+    
+        return perturbed
+
     @staticmethod
     def haversine_distance(cords_1, cords_2):
-        """
-        Calculate the haversine distance between two sets of coordinates
-        :param cords_1: the first set of coordinates
-        :param cords_2: the second set of coordinates
-        :return: the haversine distance between the two sets of coordinates in meter
-        """
-        # Radius of the Earth in kilometers
-        R = 6371
-
-        # Convert latitude and longitude from degrees to radians
+        R = 6_371_000                               # metres
         lat1, lon1 = cords_1
         lat2, lon2 = cords_2
-        lat1, lon1, lat2, lon2 = map(lambda x: x * (3.1415 / 180), [lat1, lon1, lat2, lon2])
-
-        # Calculate the haversine distance
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        a = (dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * (dlon / 2) ** 2
-        c = 2 * math.asin(math.sqrt(a))
-        return R * c * 1000
+        lat1, lon1, lat2, lon2 = map(math.radians, (lat1, lon1, lat2, lon2))
+        dlat, dlon = lat2 - lat1, lon2 - lon1
+        a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+        return R * 2 * math.asin(math.sqrt(a))
     
     @staticmethod
-    def haversine_heuristic(graph, node_1, node_2):
+    def haversine_heuristic(node_1, node_2):
         """
         Calculate the haversine distance between two nodes in a graph
         :param graph: the graph
@@ -207,14 +230,14 @@ class NGAMOBRPProblem(Problem):
         :return: the haversine distance between the two nodes in meters
             """
         # Get the coordinates of the two nodes
-        cords_1 = graph.nodes[node_1]['y'], graph.nodes[node_1]['x']
-        cords_2 = graph.nodes[node_2]['y'], graph.nodes[node_2]['x']
+        cords_1 = node_1['y'], node_1['x']
+        cords_2 = node_2['y'], node_2['x']
 
         # Calculate the haversine distance
         return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)
 
     @staticmethod
-    def time_heuristic(graph, node_1, node_2):
+    def time_heuristic(node_1, node_2):
         """
         Calculate the haversine distance between two nodes in a graph
         :param graph: the graph
@@ -223,13 +246,13 @@ class NGAMOBRPProblem(Problem):
         :return: the haversine distance between the two nodes in meters
             """
         # Get the coordinates of the two nodes
-        cords_1 = graph.nodes[node_1]['y'], graph.nodes[node_1]['x']
-        cords_2 = graph.nodes[node_2]['y'], graph.nodes[node_2]['x']
+        cords_1 = node_1['y'], node_1['x']
+        cords_2 = node_2['y'], node_2['x']
 
         # Calculate the haversine distance
-        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)
+        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)/7.582*math.exp(0.1072*(-1))
     @staticmethod
-    def safety_heuristic(graph, node_1, node_2):
+    def safety_heuristic(node_1, node_2):
         """
         Calculate the haversine distance between two nodes in a graph
         :param graph: the graph
@@ -238,13 +261,13 @@ class NGAMOBRPProblem(Problem):
         :return: the haversine distance between the two nodes in meters
             """
         # Get the coordinates of the two nodes
-        cords_1 = graph.nodes[node_1]['y'], graph.nodes[node_1]['x']
-        cords_2 = graph.nodes[node_2]['y'], graph.nodes[node_2]['x']
+        cords_1 = node_1['y'], node_1['x']
+        cords_2 = node_2['y'], node_2['x']
 
         # Calculate the haversine distance
-        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)
+        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2) * 0.15
     @staticmethod
-    def comfort_heuristic(graph, node_1, node_2):
+    def comfort_heuristic(node_1, node_2):
         """
         Calculate the haversine distance between two nodes in a graph
         :param graph: the graph
@@ -253,28 +276,24 @@ class NGAMOBRPProblem(Problem):
         :return: the haversine distance between the two nodes in meters
             """
         # Get the coordinates of the two nodes
-        cords_1 = graph.nodes[node_1]['y'], graph.nodes[node_1]['x']
-        cords_2 = graph.nodes[node_2]['y'], graph.nodes[node_2]['x']
+        cords_1 = node_1['y'], node_1['x']
+        cords_2 = node_2['y'], node_2['x']
 
         # Calculate the haversine distance
-        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)
+        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2) * 0.57
 
-    def a_star(self, src, dest, objective):
-        """
-        A* algorithm to find the shortest path from src to dest.
-        """
-        # Use the graph and the cost function to find the path
-        heuristic = None
-        if objective == 0:
-            heuristic = NGAMOBRPProblem.haversine_heuristic
-        elif objective == 1:
-            heuristic = NGAMOBRPProblem.time_heuristic
-        elif objective == 2:
-            heuristic = NGAMOBRPProblem.safety_heuristic
-        elif objective == 3:
-            heuristic = NGAMOBRPProblem.comfort_heuristic
-        path = alg_utils.a_star(self.graph, src, dest, heuristic=heuristic, weight=self.obj_names[objective])
-        return path
+    def a_star(self, src, dst, obj_idx):
+        heuristics = {
+            'travel distance': lambda u, v: NGAMOBRPProblem.haversine_heuristic(self.graph.nodes[u], self.graph.nodes[v]),
+            'travel time'   : lambda u, v: NGAMOBRPProblem.time_heuristic(self.graph.nodes[u], self.graph.nodes[v]),
+            'safety'        : lambda u, v: NGAMOBRPProblem.safety_heuristic(self.graph.nodes[u], self.graph.nodes[v]),
+            'comfort'       : lambda u, v: NGAMOBRPProblem.comfort_heuristic(self.graph.nodes[u], self.graph.nodes[v])
+        }
+        return alg_utils.a_star(
+            self.graph, src, dst,
+            heuristic=heuristics[self.obj_names[obj_idx]],
+            weight=self.obj_names[obj_idx]
+        )
 
 class NGAMOBRPSampling(Sampling):
     """
@@ -283,8 +302,10 @@ class NGAMOBRPSampling(Sampling):
     """
 
     def __init__(self, init_pop_size, **kwargs):
+        # print("initializing NGAMOBRPSampling...")
         super().__init__(**kwargs)
         self.init_pop_size = init_pop_size
+        # print("NGAMOBRPSampling initialized.")
 
     def _do(self, problem: NGAMOBRPProblem, n_samples: int, **kwargs) -> np.ndarray:
         
@@ -292,6 +313,7 @@ class NGAMOBRPSampling(Sampling):
         Returns an (n_samples, 1) array with dtype=float where each entry
         is the index into problem.route_storage.
         """
+        # print("Running custom sampling for NGAMOBRP...")
         routes_idx = []
 
         # --- step 1: random criterion for P0 --------------------------------
@@ -307,13 +329,18 @@ class NGAMOBRPSampling(Sampling):
         while len(routes_idx) < n_samples:
             # pick one of the three perturb versions at random
             perturb_version = problem.rand.randint(1,3)
+            # print(f"Perturbing with version {perturb_version} on route {P0}")
             P1 = problem.perturb(perturb_version, P0)
             # print(P1)
             idx = problem.store_route(P1)
             routes_idx.append(idx)
             P0 = P1
         # --- step 3: return as NumPy array ---------------------------------
-        return np.array(routes_idx).reshape(-1, 1).astype(float)
+        # print(f"Generated {len(routes_idx)} routes for NGAMOBRP sampling.")
+        # print(problem.route_storage)
+        arr = np.array(routes_idx).reshape(-1, 1).astype(float)
+        # print(arr)
+        return arr
 
 class NGAMOBRPMutation(Mutation):
     """
@@ -322,15 +349,17 @@ class NGAMOBRPMutation(Mutation):
     index into `problem.route_storage`.
     """
 
-    def __init__(self, prob=0.4, **kwargs):
+    def __init__(self, prob=0.05, **kwargs):
         """
         Parameters
         ----------
         prob : float
             Per-individual mutation probability (default 0.4).
         """
+        # print("initializing NGAMOBRPMutation...")
         super().__init__(prob=prob, **kwargs)
         self.pr = prob
+        # print("NGAMOBRPMutation initialized.")
 
     # ------------------------------------------------------------------ #
     def _do(self,problem:NGAMOBRPProblem, X:np.ndarray, **kwargs):
@@ -351,6 +380,7 @@ class NGAMOBRPMutation(Mutation):
         Y : ndarray, same shape & dtype as X
             Mutated population.
         """
+        # print("Running custom mutation for NGAMOBRP...")
         rng = problem.rand            # short-hand
         Y = X.copy()
 
@@ -378,19 +408,27 @@ class NGAMOBRPSelection(Selection):
 
     def __init__(self):
         # n_parents = 2 for mating; everything returns pairs
+        # print("initializing NGAMOBRPSelection...")
         super().__init__()
         self.n_parents = 2
+        # print("NGAMOBRPSelection initialized.")
 
     def _do(self, problem, pop, n_select, n_parents, **kwargs):
-        X = pop.get("X")
+        # print("Running custom selection for NGAMOBRP...")
         F = pop.get("F")
-        # F = pop.get("F")                     # (N, 4) objective matrix
+        # print(f'Selecting {n_select} pairs of parents with {n_parents} parents from {len(F)} individuals. ')
+        # print(F)
+        # print(pop.get("X"))
+        # print(problem.route_storage)
+        
+
         rng = problem.rand               # short-hand
         # # 1) Choose two *different* objectives at random
         obj_a, obj_b = rng.sample(range(0,problem.n_obj), 2)
         # # 2) Build two ranked lists of *indices* (smallest value first)
         list_a = np.argsort(F[:, obj_a]).tolist()
         list_b = np.argsort(F[:, obj_b]).tolist()
+        # print(f'lista {list_a} \n listb {list_b}')
 
         pairs = []   # list‑of‑lists shaped (n_matings, 2)
 
@@ -416,9 +454,21 @@ class NGAMOBRPSelection(Selection):
                     L.remove(idx_a)
                 if idx_b in L:
                     L.remove(idx_b)
-
+        if pairs == []:
+            if len(F) == 1:
+                # if only one solution, return it as a pair
+                # print("Only one solution available, returning it as a pair.")
+                # return self pairing of only solution
+                pairs = [[list_a[0], list_a[0]] for _ in range(n_select)]
+            if len(F) == 2:
+                # if only two solutions, return them as pairs
+                # print("Only two solutions available, returning them as pairs.")
+                # return self pairing of only two solutions
+                pairs = [[list_a[0], list_a[1]] for _ in range(n_select)]
         # 5) Return as a NumPy array – shape must be (n_matings, 2)
-        return np.asarray(pairs, dtype=np.int64)
+        arr = np.asarray(pairs, dtype=np.int64)
+        # print(arr)
+        return arr
 
 class NGAMOBRPCrossover(Crossover):
     """
@@ -426,7 +476,9 @@ class NGAMOBRPCrossover(Crossover):
     """
 
     def __init__(self, **kwargs):
+        # print("initializing NGAMOBRPCrossover...")
         super().__init__(n_parents=2, n_offsprings=2, **kwargs)
+        # print("NGAMOBRPCrossover initialized.")
 
     def _do(self, problem, pop, **kwargs):
         """
@@ -437,6 +489,7 @@ class NGAMOBRPCrossover(Crossover):
             offspring = np.ndarray of shape (n_offspring, n_matings, n_var)
 
         """
+        # print("Running custom crossover for NGAMOBRP...")
                 # The input of has the following shape (n_parents, n_matings, n_var)
         _, n_matings, n_var = pop.shape
 
@@ -453,6 +506,11 @@ class NGAMOBRPCrossover(Crossover):
                 continue
 
             a, b = pop[0, k, 0], pop[1, k, 0]
+            if a == b:
+                # If both parents are the same, just copy the parent
+                Y[0, k, 0] = a
+                Y[1, k, 0] = b
+                continue
 
             route_a = problem.get_route(a)
             route_b = problem.get_route(b)
@@ -483,39 +541,18 @@ class NGAMOBRPCrossover(Crossover):
         return Y
 
 class NGAMOBRPSurvival(Survival):
-    """
-    Implements NGA rule:
-        • Do nondominated sorting.
-        • Keep fronts F1, F2, … until the first that *exceeds* pop_size,
-          *but still keep that whole front* (population can grow).
-        • No crowding distance pruning.
-        • Also drop exact duplicates (optional).
-
-    We attach rank info to pop for the selector.
-    """
-
-    def __init__(self, pop_size, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, pop_size, filter_infeasible=True):
+        super().__init__(filter_infeasible=filter_infeasible)
         self.pop_size = pop_size
-
-    # ------------- pymoo API ------------
+        self.persisent_popsize = pop_size
+        
     def _do(self, problem, pop, n_survive, *args, **kwargs):
-        F = pop.get("F")      # (N, n_obj)
-        nds = NonDominatedSorting()  # ndarray int
-        ranks = nds.do(F)
-        pop.set("rank", ranks)
-
+        F = pop.get("F")
+        fronts = NonDominatedSorting().do(F)
         survivors = []
-        current_front = 0
-        while True:
-            idx = np.where(ranks == current_front)[0]
-            if len(idx) == 0:
-                break
-            survivors.extend(idx.tolist())
-            if len(survivors) >= self.pop_size:
-                # keep WHOLE current front even if we overflow
-                current_front += 1
-                continue
-            current_front += 1
-
-        return survivors[:self.pop_size]  # return only the first pop_size individuals
+        f = 0
+        while len(survivors) < self.persisent_popsize and f < len(fronts):
+            survivors.extend(fronts[f].tolist())
+            f += 1
+        # print('survivors: ', len(survivors), 'of', len(pop), 'from', f, 'fronts')
+        return pop[np.asarray(survivors, dtype=int)]  

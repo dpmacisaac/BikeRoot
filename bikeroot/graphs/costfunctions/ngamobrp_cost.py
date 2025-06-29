@@ -168,7 +168,7 @@ class NgaMobrp_Cost(Cost):
                    }
         
         return features
-
+    
     node_features = {
         'highway': {
             'steps': {'f': 20, 'node_fc': 300, 'node_fs': None},

@@ -16,6 +16,10 @@ def solve(G: nx.MultiDiGraph,
           criteria: list[str],heuristic_prune=None, heuristic_skip=None, heuristic_checkdom=None,
           **kwargs) -> list[tuple[list[int], list[float]]]:
     
+    heuristic_prune=Pruning(dst= dst, G=G, **heuristic_prune)
+    heuristic_skip = Skip(G= G, src=src, dst=dst,**heuristic_skip)
+    heuristic_checkdom = CheckDominance(G=G, criteria=criteria, **heuristic_checkdom)
+
     multilabelset = MultiLabelSet(criteria)
     lo_id = multilabelset.add_label(node_at=src, cost={w: 0.0 for w in criteria}, prev_id=None)
     multilabelset.add_to_queue(lo_id)
@@ -28,9 +32,11 @@ def solve(G: nx.MultiDiGraph,
         # print(f"Current Node: {curr_node}, Cost: {curr_cost}, ID: {curr_id}")
         if heuristic_prune is not None:
             if heuristic_prune.terminationCondition(curr_label) is True:
-                print(f"Termination condition met at node {curr_node} with cost {curr_cost}.")
+                # print(f"Termination condition met at node {curr_node} with cost {curr_cost}.")
                 break
         for v in G.successors(curr_node):
+            if v is None:
+                continue
             edge_data = G.get_edge_data(curr_node, v)[0]
             new_cost = {k: curr_cost[k] + float(edge_data[k]) for k in criteria}
             new_edge = {'node_at': v, 'cost': new_cost, 'prev_id': curr_id}
@@ -60,7 +66,7 @@ class Skip:
         if type == 'ellipse':
             src = kwargs.get('src')
             dst = kwargs.get('dst')
-            ab = float(kwargs.get('ab', 1.0))
+            k = float(kwargs.get('ab', 1.0))
             dmin = float(kwargs.get('dmin', 0.0))
             nodea_data = G.nodes[src]
             
@@ -69,7 +75,12 @@ class Skip:
             self.dst_coords = (nodeb_data['y'], nodeb_data['x'])
             od = alg_utils.haversine_distance(self.src_coords, self.dst_coords)
             c = 0.5 * od
-            a = max(c * ab, dmin)
+            # 1. aspect-ratio rule
+            a = c / math.sqrt(1.0 - 1.0 / (k * k))
+
+            # 2. minimum over-hang rule
+            if a - c < dmin:
+                a = c + dmin
             self.bounds = 2 * a
            
 
@@ -113,28 +124,28 @@ class CheckDominance:
     def epsilon_check(self, new_edge, multilabelset):
         epsilon_cost = {attr: new_edge['cost'][attr] * (1+ self.epsilon) for attr in self.criteria}
 
-        if multilabelset.get_labels_by_node(new_edge['node_at']) is None:
+        if multilabelset.get_labels_by_node(new_edge['node_at']) is []:
             return True, []
 
-        for label in multilabelset.get_labels_by_node(new_edge['node_at']):
-            l_cost = multilabelset.get_label(label)['cost']
+        for label_id in multilabelset.get_labels_by_node(new_edge['node_at']):
+            l_cost = multilabelset.get_label(label_id)['cost']
             if all(l_cost[attr] < epsilon_cost[attr] for attr in self.criteria):
                 return False, []
         remove = []   
-        for label in multilabelset.get_labels_by_node(new_edge['node_at']):
-            l_cost = multilabelset.get_label(label)['cost']
+        for label_id in multilabelset.get_labels_by_node(new_edge['node_at']):
+            l_cost = multilabelset.get_label(label_id)['cost']
             l_epsilon_cost = {attr: l_cost[attr] * (1 + self.epsilon) for attr in self.criteria}
             new_cost = new_edge['cost']
             if all(new_cost[attr] < l_epsilon_cost[attr] for attr in self.criteria):
-                remove.append(label)
+                remove.append(label_id)
         return True, remove
+
 class Pruning:
     def __init__(self, type, dst, G, **kwargs):
         self.dst = dst
         self.G = G
         self.type = type
         if type == 'ratio':
-            self.uppercost = math.inf
             self.reached_destination = False
             self.criteria = kwargs.get('criteria')
             self.alpha = float(kwargs.get('alpha', 1.0))
@@ -147,6 +158,7 @@ class Pruning:
     def ratio_termination(self, label):
         cost = label['cost']
         u = label['node_at']
+        self.uppercost = math.inf
         if u == self.dst and not self.reached_destination:
             self.uppercost = self.alpha * cost[self.criteria]
             self.reached_destination = True

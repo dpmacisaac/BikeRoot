@@ -1,3 +1,4 @@
+from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
 import osmnx as ox
@@ -10,26 +11,13 @@ def remove_duplicate_paths(paths):
     pass
 
 def haversine_distance(cords_1, cords_2):
-    """
-    Calculate the haversine distance between two sets of coordinates
-    :param cords_1: the first set of coordinates
-    :param cords_2: the second set of coordinates
-    :return: the haversine distance between the two sets of coordinates in meter
-    """
-    # Radius of the Earth in kilometers
-    R = 6371
-
-    # Convert latitude and longitude from degrees to radians
+    R = 6_371_000                               # metres
     lat1, lon1 = cords_1
     lat2, lon2 = cords_2
-    lat1, lon1, lat2, lon2 = map(lambda x: x * (3.1415 / 180), [lat1, lon1, lat2, lon2])
-
-    # Calculate the haversine distance
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = (dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * (dlon / 2) ** 2
-    c = 2 * math.asin(math.sqrt(a))
-    return R * c * 1000
+    lat1, lon1, lat2, lon2 = map(math.radians, (lat1, lon1, lat2, lon2))
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    return R * 2 * math.asin(math.sqrt(a))
 
 def haversine_heuristic(graph, node_1, node_2):
     """
@@ -46,7 +34,7 @@ def haversine_heuristic(graph, node_1, node_2):
     # Calculate the haversine distance
     return haversine_distance(cords_1, cords_2)
 
-def total_path_cost(G, path, weight="length"):
+def total_path_cost(G, path, criteria):
     """Compute the total cost of a path based on a specific edge attribute.
     
     Args:
@@ -57,9 +45,12 @@ def total_path_cost(G, path, weight="length"):
     Returns:
         float: Total cost of the path.
     """
-    return sum(float(G.get_edge_data(u, v)[0][weight]) for u, v in zip(path[:-1], path[1:]))
+    if isinstance(criteria, str):
+        return sum(float(G.get_edge_data(u, v)[0][criteria]) for u, v in zip(path[:-1], path[1:]))
 
-def a_star(graph, src, dst, heuristic=haversine_heuristic, weight="length"):
+    return {crit: sum(float(G.get_edge_data(u, v)[0][crit]) for u, v in zip(path[:-1], path[1:])) for crit in criteria}
+
+def a_star(G, src, dst, heuristic=haversine_heuristic, weight="length"):
     """
     A* algorithm to find the shortest path between two nodes in a graph
     :param graph: the graph to search
@@ -67,52 +58,53 @@ def a_star(graph, src, dst, heuristic=haversine_heuristic, weight="length"):
     :param goal: the goal node
     :return: the shortest path between start and goal (Iterable[list[int]])
     """
-    open_set = set([src]) # TODO: change to priority queue
-    closed_set = set()
-    g = {src: 0}
-    #h = {start: heuristic(graph, start, goal)}
-    f = {src: g[src] + heuristic(graph, src, dst)}
-    parent = {src: None}
+    return nx.astar_path(G, src, dst, heuristic=heuristic, weight=weight)
+    # open_set = set([src]) # TODO: change to priority queue
+    # closed_set = set()
+    # g = {src: 0}
+    # #h = {start: heuristic(graph, start, goal)}
+    # f = {src: g[src] + heuristic(graph, src, dst)}
+    # parent = {src: None}
     
-    while(open_set):
-        # Get the node in the open set with the lowest f value
-        current = min(open_set, key=lambda x: f[x])
+    # while(open_set):
+    #     # Get the node in the open set with the lowest f value
+    #     current = min(open_set, key=lambda x: f[x])
 
-        # Reached Goal
-        if current == dst:
-            path = []
-            while current != src:
-                path.append(current)
-                current = parent[current]
-            path.append(src)
-            path.reverse()
-            return path
+    #     # Reached Goal
+    #     if current == dst:
+    #         path = []
+    #         while current != src:
+    #             path.append(current)
+    #             current = parent[current]
+    #         path.append(src)
+    #         path.reverse()
+    #         return path
         
-        open_set.remove(current)
-        closed_set.add(current)
+    #     open_set.remove(current)
+    #     closed_set.add(current)
 
-        successors = graph.out_edges(current)
-        for successor_edge in successors:
-            successor = successor_edge[1]
+    #     successors = graph.out_edges(current)
+    #     for successor_edge in successors:
+    #         successor = successor_edge[1]
 
-            if successor in closed_set:
-                continue
-            x = float(graph.get_edge_data(current, successor)[0][weight])
-            succ_g = g[current] + x # dist from start to curr + curr to succ
-            succ_h = heuristic(graph, successor, dst)
-            succ_f = succ_g + succ_h
+    #         if successor in closed_set:
+    #             continue
+    #         x = float(graph.get_edge_data(current, successor)[0][weight])
+    #         succ_g = g[current] + x # dist from start to curr + curr to succ
+    #         succ_h = heuristic(graph, successor, dst)
+    #         succ_f = succ_g + succ_h
 
-            if successor not in open_set:
-                open_set.add(successor)
-            elif succ_g >= g[successor]:
-                continue
+    #         if successor not in open_set:
+    #             open_set.add(successor)
+    #         elif succ_g >= g[successor]:
+    #             continue
             
-            # this is best path so far
-            parent[successor] = current
-            g[successor] = succ_g
-            f[successor] = succ_f
+    #         # this is best path so far
+    #         parent[successor] = current
+    #         g[successor] = succ_g
+    #         f[successor] = succ_f
 
-    return None
+    # return None
 
 def a_star_heap(graph, start, goal, heuristic=haversine_heuristic, weight="length"):
     """

@@ -81,6 +81,23 @@ class BikeNetwork():
         if "crs" not in self.graph.graph:
             self.graph.graph["crs"] = "EPSG:4326"
         return self.graph
+    
+    def weights_to_floats(self, criteria):
+        """
+        Convert edge weights to floats based on the specified criteria.
+        """
+        if not isinstance(criteria, list):
+            criteria = [criteria]
+        
+        for edge in self.graph.edges(data=True):
+            for criterion in criteria:
+                if criterion in edge[2]:
+                    edge[2][criterion] = float(edge[2][criterion])
+                else:
+                    raise ValueError(f"Criterion '{criterion}' not found in edge data.")
+        
+        return self.graph
+
 
     def prints(self, part, limit=None):
         if part == "nodes":
