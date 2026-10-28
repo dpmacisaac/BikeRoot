@@ -247,7 +247,7 @@ class NGAMOBRPProblem(Problem):
         cords_2 = node_2['y'], node_2['x']
 
         # Calculate the haversine distance
-        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)/7.582*math.exp(0.1072*(-1))
+        return NGAMOBRPProblem.haversine_distance(cords_1, cords_2)/7.582*math.exp(0.1072*(-0.92))
     @staticmethod
     def safety_heuristic(node_1, node_2):
         """

@@ -27,7 +27,9 @@ __all__ = [
     "nga3mobrp_solve",
     "moedbrp_solve",
     'Evaluation',
-    "linastar_solve"
+    "linastar_solve",
+    "namoa_solve",
+    "viss",
 ]
 
 from .graphs.bikenetwork import BikeNetwork
@@ -50,3 +52,5 @@ from .algorithms.hmls import CheckDominance as HeuristicCheckDom
 from .evaluations import utils as eval_utils
 from .evaluations.evaluation import Result, Evaluation
 from .algorithms.linastar import solve as linastar_solve
+from .algorithms.namoa import solve as namoa_solve
+from .evaluations import visualizations as viss

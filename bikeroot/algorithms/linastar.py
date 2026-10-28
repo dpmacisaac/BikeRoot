@@ -20,7 +20,19 @@ def solve(G: nx.MultiDiGraph,
     crit_count = len(criteria)
     sol_count = kwargs.get('sol_count', crit_count*4)
     find_all_sols = kwargs.get('find_all_sols', False)
-    
+    heuristic_type = kwargs.get('heuristic', 'scalarized')
+    if heuristic_type == 'tc':
+        G_rev = G.reverse(copy=True)
+        tc_heur = {node: [math.inf for _ in criteria] for node in G.nodes}
+        for i, crit in enumerate(criteria):
+            try:
+                lengths = nx.single_source_dijkstra_path_length(G_rev, dst, weight=crit)
+                for node, cost in lengths.items():
+                    tc_heur[node][i] = cost
+            except nx.NetworkXNoPath:
+                pass  # unreachable nodes stay as is:
+    else:
+        heurrr = scalarized_heuristic(pref,G)
     # print(simplex_lattice(sol_count, crit_count))
 
     if find_all_sols:
@@ -35,7 +47,9 @@ def solve(G: nx.MultiDiGraph,
         idx = 0
         while len(paths) < sol_count and idx < len(prefs):
             pref = {k: float(prefs[idx][i]) for i, k in enumerate(criteria)}
-            path = alg_utils.a_star(G, src, dst, scalarized_heuristic(pref,G), scalarized_cost(pref))
+            if heuristic_type == 'tc':
+                heurrr = tc_heuristic(pref, tc_heur)
+            path = alg_utils.a_star(G, src, dst, heurrr, scalarized_cost(pref))
             if path not in paths:
                 logging.info(f"Preference {idx}: {pref}, Path: {path}, Count: {len(paths)}")
                 paths.append(path)
@@ -155,6 +169,17 @@ def scalarized_cost(prefs):
         return sum(prefs[k] * attr[k] for k in prefs)
     return scalarized_cost_fn
 
+def tc_heuristic(prefs, tc_heur):
+    def tc_heurisitic_fn(node,dstnode):
+        """
+        Calculate the scalarized heuristic between two nodes in a graph
+        :param node: the node to calculate the heuristic for
+        :return: the scalarized heuristic for the node
+        """
+        # Example heuristic: total cost to destination
+        return sum(prefs[k] * tc_heur[node] for k in prefs)
+    return tc_heurisitic_fn
+
 def scalarized_heuristic(prefs, graph):
     def scalarized_heuristic_fn(node_1, node_2):
         """
@@ -165,7 +190,7 @@ def scalarized_heuristic(prefs, graph):
         """
         distance = haversine_distance((node_1['y'], node_1['x']), (node_2['y'], node_2['x']))
         mods = {'travel distance': 1,
-                'travel time': 1/7.582*math.exp(0.1072*(-1)),
+                'travel time': 1/7.582*math.exp(0.1072*(-0.92)),
                 'safety': 0.15,
                 'comfort': 0.57}
         return sum(prefs[k] * distance * mods[k] for k in prefs)

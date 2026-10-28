@@ -96,10 +96,10 @@ class NgaMobrp_Cost(Cost):
         return worst_case if worst_case != -1 else 1
 
     def _c_slope(self, slope):
-        return 2 - (self.v_calc/self._V_calculation(-1))
+        return 2 - (self.v_calc/self._V_calculation(-0.92))
 
     def _V_calculation(self,sl):
-        if sl < -0.92:
+        if sl <= -0.92:
             return 7.582*math.exp(0.1072*sl)
         elif sl <= 6:
             return 5.787*math.exp(-0.1880*sl)
